@@ -1,0 +1,93 @@
+Install SAMBA and Enable the Service
+1- Install Samba and its tools:
+sudo dnf install samba samba-client samba-common -y
+
+2- Enable the services:
+sudo systemctl enable --now smb nmb
+
+Create Shared Folder, Create Users and Groups, and Assign the Necessary Permissions to the Shared Folder
+3- Create a directory to share:
+sudo mkdir /srv/samba/
+GRANT PERMISSIONS SO THAT ALL USERS CAN READ, WRITE, AND EXECUTE:
+sudo chmod 777 /srv/samba
+
+In the Samba folder, create 100 files named adrian (adrian1, adrian2 … adrian100)
+Change to the Samba folder created for sharing resources:
+cd /srv/samba/
+
+Create the 100 files:
+sudo touch adrian{1..100}.txt
+
+4- CONFIGURE THE SAMBA CONFIGURATION FILE
+sudo nano /etc/samba/smb.conf
+
+ADD THE FOLLOWING PARAMETERS:
+[global]
+workgroup = WORKGROUP
+server string = Samba Server %v
+netbios name = rocky
+security = user
+map to guest = Bad User
+dns proxy = no
+
+[Public]
+path = /srv/samba/repositorio
+browsable = yes
+writable = yes
+guest ok = yes
+read only = no
+
+NOTE:
+[global]: Global options for Samba.
+workgroup = WORKGROUP: The name of the workgroup, compatible with Windows.
+security = user: Requires user-based authentication.
+map to guest = Bad User: Unknown users are mapped as guests.
+[Public]: Definition of the shared resource.
+path: Path to the shared directory.
+browsable: Allows it to be visible on the network.
+writable: Allows writing to the share.
+guest ok: Permits access without a password.
+read only = no: Disables read-only mode.
+
+5- Configure firewalld to allow Samba:
+sudo firewall-cmd --permanent --add-service=samba
+sudo firewall-cmd --reload
+
+6- CREATE A SAMBA USER AND GROUP (OPTIONAL)
+sudo useradd argenis-samba
+sudo smbpasswd -a argenis-samba
+sudo usermod -aG grupo-samba argenis-samba
+
+Explanation:
+useradd sambauser: Creates a local user.
+smbpasswd -a sambauser: Adds the user to the Samba database and prompts to set a password.
+
+Important: Because in this example we configured the share for guest access (guest ok = yes), creating a user is optional.
+
+7- SET SELinux TO PERMISSIVE MODE:
+setenforce 0
+
+Access from a Linux Client
+From a Linux client:
+smbclient //192.168.1.100/Public -N
+//192.168.1.100/Public: Path to the Samba share.
+-N: Do not prompt for a password (guest mode).
+
+Or mount the share:
+sudo mount -t cifs //192.168.1.100/Public /mnt -o guest
+
+ACCESS FROM A WINDOWS CLIENT
+From Windows:
+Steps to map a new network drive:
+Open File Explorer.
+Click on “This PC” in the left panel.
+In the top ribbon, select “Map network drive.”
+Choose a drive letter (for example, Z:).
+In the “Folder” field, enter:
+\\IP-Of-the-Server\Public
+
+Check “Reconnect at sign-in” if you want the share to mount automatically at each reboot.
+
+Click “Finish.”
+
+Now, the shared resource will appear as a network drive under “This PC.”
