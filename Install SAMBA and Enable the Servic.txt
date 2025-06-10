@@ -16,7 +16,7 @@ Change to the Samba folder created for sharing resources:
 cd /srv/samba/
 
 Create the 100 files:
-sudo touch adrian{1..100}.txt
+sudo touch file{1..20}.txt
 
 4- CONFIGURE THE SAMBA CONFIGURATION FILE
 sudo nano /etc/samba/smb.conf
